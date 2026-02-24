@@ -1,31 +1,49 @@
 import express from 'express'
-import 'dotenv/config'
 import morgan from 'morgan'
-import routes from './routes/index.js'
+import cors from 'cors'
+import routes from './src/routes/index.js'
+import { errorHandler } from './src/middleware/errorHandler.middleware.js'
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
-// export app
+
+// serve frontend
+app.use(express.static(path.join(__dirname, "../public")))
 
 // Middleware
-if (process.env.MORGAN_LOG === 'production') {
-    app.use(morgan('combined'))
+if (process.env.NODE_ENV === 'production') {
+    app.use(morgan('combined')) // full log
 } else {
     app.use(morgan('dev'))
 }
 
 // CORS Middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*') //. * all the domains
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
-    res.header('Access-Control-Allow-Methods', ' POST, PUT, DELETE, OPTIONS')
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200)
-    }
-    next()
-})
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://devlopmentserver.com'], // dev server process.env.CORS_ORIGINS?
+  credentials: true
+}))
 
-app.use(express.json()) // better than body-parser
+// client sent json -> auto parse to JS object
+app.use(express.json())
 
 app.use('/api', routes)
+
+app.use(express.static('public'))
+
+// all routes 404 handler (create error)
+app.use((req, res, next) => {
+  const error = new Error(`Resource not found`)
+  error.statusCode = 404
+  error.errorCode = 'RESOURCE_NOT_FOUND_404'
+  next(error)
+})
+
+// Global error handler (LAST)
+app.use(errorHandler)
+
 
 export default app
