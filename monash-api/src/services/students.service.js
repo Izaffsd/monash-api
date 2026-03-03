@@ -3,22 +3,31 @@ import { extractStudentNumberPrefix } from '../validations/studentValidation.js'
 import { paginate } from '../utils/pagination.js'
 import { AppError } from '../utils/AppError.js'
 
-// return full student data
+// Full student detail — joins users to surface name/email for registered students
 const FIND_STUDENT_BY_ID = `
     SELECT
-        s.*,
+        s.student_id, s.student_number, s.mykad_number, s.address, s.gender,
+        s.course_id, s.created_at, s.updated_at,
         c.course_code, c.course_name,
-        s.created_at, s.updated_at
+        u.name  AS student_name,
+        u.email AS email
     FROM students s
-    JOIN courses c ON s.course_id = c.course_id
+    JOIN  courses c ON s.course_id  = c.course_id
+    LEFT JOIN users u ON u.student_id = s.student_id
     WHERE s.student_id = ?
 `
 
 export const getAllStudentsService = async (query) => {
     const baseQuery = `
-        SELECT s.*, c.course_code, c.course_name
+        SELECT
+            s.student_id, s.student_number, s.mykad_number, s.address, s.gender,
+            s.course_id, s.created_at, s.updated_at,
+            c.course_code, c.course_name,
+            u.name  AS student_name,
+            u.email AS email
         FROM students s
         LEFT JOIN courses c USING (course_id)
+        LEFT JOIN users   u ON u.student_id = s.student_id
     `
     const { data, pagination } = await paginate(db, baseQuery, query)
     return { data, pagination }
@@ -34,15 +43,8 @@ export const getStudentByIdService = async (student_id) => {
     return result[0] || null
 }
 
-export const createStudentService = async ( data ) => {
-    const {
-        student_number,
-        mykad_number,
-        email,
-        student_name,
-        address,
-        gender
-    } = data
+export const createStudentService = async (data) => {
+    const { student_number, mykad_number, address, gender } = data
 
     // Auto-detect course_id from student_number prefix
     const prefix = extractStudentNumberPrefix(student_number)
@@ -57,22 +59,19 @@ export const createStudentService = async ( data ) => {
         throw new AppError('Course does not exist', 404, 'COURSE_NOT_FOUND_404')
     }
 
-    const course_id = courseResult[0].course_id  // [ { course_id: 4 } ]
+    const course_id = courseResult[0].course_id
 
     const insertQuery = `
-        INSERT INTO students
-        (student_number, mykad_number, email, student_name, address, gender, course_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO students (student_number, mykad_number, address, gender, course_id)
+        VALUES (?, ?, ?, ?, ?)
     `
 
     const values = [
         student_number,
-        mykad_number,
-        email,
-        student_name,
-        address || null,
-        gender || null,
-        course_id
+        mykad_number || null,
+        address      || null,
+        gender       || null,
+        course_id,
     ]
 
     const [result] = await db.execute(insertQuery, values)
@@ -86,22 +85,14 @@ export const createStudentService = async ( data ) => {
 }
 
 export const updateStudentService = async (student_id, data) => {
-    const {
-        mykad_number,
-        student_name,
-        address,
-        gender,
-        student_number,
-    } = data
+    const { student_number, mykad_number, address, gender } = data
 
     const prefix = extractStudentNumberPrefix(student_number)
 
-    // Get course_id from course_code
     const [courseExists] = await db.execute(
         'SELECT course_id FROM courses WHERE course_code = ?',
         [prefix]
     )
-
 
     if (courseExists.length === 0) {
         throw new AppError('Course does not exist', 404, 'COURSE_NOT_FOUND_404')
@@ -111,18 +102,17 @@ export const updateStudentService = async (student_id, data) => {
 
     const updateQuery = `
         UPDATE students
-        SET mykad_number = ?, student_name = ?, address = ?, gender = ?, student_number = ?, course_id = ?
+        SET student_number = ?, mykad_number = ?, address = ?, gender = ?, course_id = ?
         WHERE student_id = ?
     `
 
     const values = [
-        mykad_number,
-        student_name,
-        address || null,
-        gender || null,
         student_number,
+        mykad_number || null,
+        address      || null,
+        gender       || null,
         course_id,
-        student_id
+        student_id,
     ]
 
     const [result] = await db.execute(updateQuery, values)

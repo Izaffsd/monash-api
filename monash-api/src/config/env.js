@@ -9,6 +9,8 @@ const envSchema = z.object({
   DB_USER: z.string().min(1),
   DB_PASSWORD: z.string().optional().default(""),
   DB_NAME: z.string().min(1),
+  JWT_SECRET: z.string().min(1),
+  JWT_EXPIRES_IN: z.string().default("7d"),
 })
 
 const result = envSchema.safeParse(process.env)

@@ -2,6 +2,7 @@ import express from 'express'
 import db from '../config/connection.js'
 import studentsRoutes from './students.routes.js'
 import coursesRoutes from './courses.routes.js'
+import authRoutes from './auth.routes.js'
 import { transformRequest } from '../middleware/transformRequest.middleware.js'
 
 const router = express.Router()
@@ -18,7 +19,7 @@ router.get('/health', async (req, res) => {
   try {
     await db.execute('SELECT 1')
     return res.status(200).json({
-      status: 'OK',
+      status: 'Ok',
       database: 'connected',
       timestamp: new Date().toISOString()
     })
@@ -36,9 +37,9 @@ router.use(transformRequest)
 
 
 // Mount route modules
+router.use('/auth', authRoutes)
 router.use(studentsRoutes)
 router.use(coursesRoutes)
-// router.use('/auth/', authRoutes)
 
 
 export default router

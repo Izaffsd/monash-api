@@ -19,36 +19,17 @@ const studentNumber = z.string()
   })
 
 const myKadNumber = z.string()
-  .min(1, 'MyKad number is required')
   .length(12, 'MyKad number must be exactly 12 digits')
   .regex(/^\d{12}$/, 'MyKad number must contain only digits')
   .refine((val) => {
-    const mm = val.substring(2, 4)
-    const dd = val.substring(4, 6)
-    const month = parseInt(mm, 10)
-    const day = parseInt(dd, 10)
-    return month >= 1 && month <= 12 && day >= 1 && day <= 31
+      const mm    = val.substring(2, 4)
+      const dd    = val.substring(4, 6)
+      const month = parseInt(mm, 10)
+      const day   = parseInt(dd, 10)
+      return month >= 1 && month <= 12 && day >= 1 && day <= 31
   }, {
-    message: 'Invalid MyKad number format (YYMMDDxxxxxx)'
+      message: 'Invalid MyKad number format (YYMMDDxxxxxx)'
   })
-
-const email = z.string()
-  .min(1, 'Email is required')
-  .trim()
-  .toLowerCase()
-  .refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
-    message: 'Invalid email format'
-  })
-
-const studentName = z.string()
-  .min(1, 'Student name is required')
-  .max(100, 'Student name must not exceed 100 characters')
-  .trim()
-
-const studentId = z.number()
-  .int()
-  .positive('Student ID must be positive')
-
 
 // Schemas
 export const getStudentByIdSchema = z.object({
@@ -57,20 +38,17 @@ export const getStudentByIdSchema = z.object({
 
 
 export const createStudentSchema = z.object({
-  student_name: studentName,
   student_number: studentNumber,
-  email: email,
-  mykad_number: myKadNumber,
-  address: z.string().max(255, 'Address must not exceed 255 characters').trim().optional().nullable(),
-  gender: z.enum(['Male', 'Female']).optional().nullable()
+  mykad_number:   myKadNumber.optional().nullable(),
+  address:        z.string().max(255, 'Address must not exceed 255 characters').trim().optional().nullable(),
+  gender:         z.enum(['Male', 'Female']).optional().nullable(),
 })
 
 export const updateStudentSchema = z.object({
   student_number: studentNumber,
-  mykad_number: myKadNumber,
-  student_name: studentName,
-  address: z.string().max(255, 'Address must not exceed 255 characters').trim().optional().nullable(),
-  gender: z.enum(['Male', 'Female']).optional().nullable(),
+  mykad_number:   myKadNumber.optional().nullable(),
+  address:        z.string().max(255, 'Address must not exceed 255 characters').trim().optional().nullable(),
+  gender:         z.enum(['Male', 'Female']).optional().nullable(),
 })
 
 export const deleteStudentSchema = z.object({

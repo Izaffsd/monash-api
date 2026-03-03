@@ -7,6 +7,7 @@ import {
     deleteCourse
 } from '../controllers/courses.controller.js'
 import { validateZod } from '../middleware/validateZod.middleware.js'
+ import { auth, requireRoles } from '../middleware/auth.middleware.js'
 import {
     getCourseByIdSchema,
     getCourseByCodeSchema,
@@ -17,17 +18,33 @@ import {
 
 const router = express.Router()
 
-// GET routes
-router.get('/courses', getAllCourses)
-router.get('/courses/:course_code', validateZod(getCourseByCodeSchema, 'params'), getCourseByCode)
+// GET — ADMIN, HEAD_LECTURER, LECTURER
+router.get('/courses', auth,
+    requireRoles('ADMIN', 'HEAD_LECTURER', 'LECTURER'),
+    getAllCourses
+)
+router.get('/courses/:course_code', auth,
+    requireRoles('ADMIN', 'HEAD_LECTURER', 'LECTURER'),
+    validateZod(getCourseByCodeSchema, 'params'),
+    getCourseByCode
+)
 
-// POST routes
-router.post('/courses', validateZod(createCourseSchema, 'body'), createCourse)
-
-// PUT routes
-router.put('/courses/:course_id', validateZod(getCourseByIdSchema, 'params'), validateZod(updateCourseSchema, 'body'), updateCourse)
-
-// DELETE routes
-router.delete('/courses/:course_id', validateZod(deleteCourseSchema, 'params'), deleteCourse)
+// POST / PUT / DELETE — ADMIN only
+router.post('/courses', auth,
+    requireRoles('ADMIN'),
+    validateZod(createCourseSchema, 'body'),
+    createCourse
+)
+router.put('/courses/:course_id', auth,
+    requireRoles('ADMIN'),
+    validateZod(getCourseByIdSchema, 'params'),
+    validateZod(updateCourseSchema, 'body'),
+    updateCourse
+)
+router.delete('/courses/:course_id', auth,
+    requireRoles('ADMIN'),
+    validateZod(deleteCourseSchema, 'params'),
+    deleteCourse
+)
 
 export default router

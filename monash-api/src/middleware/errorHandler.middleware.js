@@ -61,9 +61,6 @@ export const errorHandler = (err, req, res, next) => {
       return response(res, err.statusCode, err.message, null, err.errorCode)
   }
 
-  // Response to CLIENT
-  if (err.errorCode === 'RESOURCE_NOT_FOUND_404') return response(res, 404, 'Resource not found', null, 'RESOURCE_NOT_FOUND_404')
-
   const mysqlHandler = MYSQL_ERRORS[err.code]
   if (mysqlHandler) {
     const mysql = mysqlHandler(err)
